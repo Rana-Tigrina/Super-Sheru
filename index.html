@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0d0a14" />
+    <title>सुपर शेरू · Super Sheru Bros</title>
+    <style>
+        /* GRD v2 shell — pixel-perfect, letterboxed, zero layout shift */
+        :root {
+            --bg: #0d0a14;
+            --frame: #2a1f3d;
+            --gold: #f2b632;
+            --ink: #e8dcc8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #shell {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #marquee {
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            color: var(--gold);
+            text-shadow: 0 0 12px rgba(242, 182, 50, 0.35);
+            text-align: center;
+            padding: 0 12px;
+        }
+
+        #marquee small {
+            display: block;
+            margin-top: 4px;
+            color: var(--ink);
+            opacity: 0.55;
+            letter-spacing: 0.06em;
+        }
+
+        #frame {
+            position: relative;
+            border: 3px solid var(--frame);
+            border-radius: 6px;
+            box-shadow: 0 0 0 1px #000, 0 18px 60px rgba(0, 0, 0, 0.6);
+            line-height: 0;
+        }
+
+        canvas#game {
+            display: block;
+            width: min(96vw, calc((100vh - 90px) * 16 / 9));
+            height: auto;
+            aspect-ratio: 16 / 9;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #000;
+        }
+
+        /* scanline / CRT whisper — pure CSS, never touches the canvas buffer */
+        #frame::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0) 0px,
+                    rgba(0, 0, 0, 0) 2px,
+                    rgba(0, 0, 0, 0.09) 3px);
+            mix-blend-mode: multiply;
+        }
+
+        #touch {
+            position: fixed;
+            inset: auto 0 0 0;
+            height: 34%;
+            pointer-events: none;
+        }
+
+        #touch [data-btn] {
+            pointer-events: auto;
+        }
+
+        noscript {
+            color: var(--gold);
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="shell">
+        <div id="marquee">
+            सुपर शेरू · SUPER SHERU BROS · आठ अध्याय
+            <small>← → move · SPACE jump (hold = higher) · SHIFT run + chakra · P pause · M mute · R restart · ENTER
+                start</small>
+        </div>
+        <div id="frame">
+            <canvas id="game" width="512" height="288" aria-label="Super Sheru Bros game canvas"></canvas>
+        </div>
+        <div id="touch" hidden></div>
+        <noscript>Super Sheru Bros needs JavaScript — the eight lands of Bharat await.</noscript>
+    </div>
+    <script type="module" src="/main.js"></script>
+</body>
+
+</html>
