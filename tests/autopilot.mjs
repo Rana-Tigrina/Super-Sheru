@@ -199,5 +199,43 @@ function decide(sim, ctx) {
         return RIGHT | JUMP | (ctx.jumpRun ? RUN : 0);
     }
 
+    /* Look ahead for platforms to jump onto */
+    for (let d = 1; d <= 10; d++) {
+        const c = colFront + d;
+        for (let r = footRow - 1; r >= Math.max(0, footRow - 5); r--) {
+            const id = level.tileAt(c, r);
+            if (id === 0x2B) { // platform tile '-'
+                /* Platform detected ahead at row r */
+                const platRow = r;
+                const dy = footRow - platRow;
+                if (dy > 0 && dy <= 5) {
+                    /* Need to jump up to reach platform */
+                    ctx.jumping = holdLong + dy * 3;
+                    ctx.jumpRun = true;
+                    return RIGHT | JUMP | RUN;
+                }
+            }
+        }
+    }
+
+    /* Check for laddoos above that we should collect */
+    if (level.entities && Array.isArray(level.entities)) {
+        for (const ent of level.entities) {
+            if (ent.type !== 'laddoo') continue;
+            const ex = FP.fromInt(ent.tx * 16 + 8);
+            const ey = FP.fromInt(ent.ty * 16 + 8);
+            const dx = ex - (p.x + FP.fromInt(p.w / 2));
+            const dy = ey - p.y;
+            if (dx > FP.fromInt(-8) && dx < FP.fromInt(64) && dy < FP.fromInt(0) && dy > FP.fromInt(-80)) {
+                /* Laddoo is above and ahead - jump for it */
+                if (ctx.jumping === 0) {
+                    ctx.jumping = holdLong + 8;
+                    ctx.jumpRun = true;
+                    return RIGHT | JUMP | RUN;
+                }
+            }
+        }
+    }
+
     return RIGHT;
 }
