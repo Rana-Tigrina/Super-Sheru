@@ -122,7 +122,7 @@ export const PHYS_FP = {
 };
 
 /* ── input bits (spec §1.3) — one byte per simulation step ──────────────── */
-export const BTN = { LEFT: 1, RIGHT: 2, JUMP: 4, RUN: 8, THROW: 16 };
+export const BTN = { LEFT: 1, RIGHT: 2, JUMP: 4, RUN: 8, THROW: 16, DOWN: 32 };
 export const INPUT = BTN;   // alias used by solver/verifier code
 
 /* ── player states (spec §3) ────────────────────────────────────────────── */

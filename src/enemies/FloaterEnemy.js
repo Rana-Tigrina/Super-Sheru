@@ -23,7 +23,7 @@ export class FloaterEnemy {
   draw(ctx, sprites, camX, camY, step) {
     const s = this.s;
     const x = FP.toInt(s.x) - camX - 1;
-    const y = FP.toInt(s.y) - camY - 3;
+    const y = FP.toInt(s.y) - camY + 2;  // Fixed: adjusted to align with player ground level
 
     if (!s.alive) {
       if (s.squash < 12) sprites.draw(ctx, 'puff', x + 4, y + 2);

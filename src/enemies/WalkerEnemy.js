@@ -23,7 +23,7 @@ export class WalkerEnemy {
     draw(ctx, sprites, camX, camY, step) {
         const s = this.s;
         const x = FP.toInt(s.x) - camX - 2;
-        const y = FP.toInt(s.y) - camY - 4;
+        const y = FP.toInt(s.y) - camY;  // Fixed: was -4, now aligned with player
 
         if (!s.alive) {
             if (s.squash < 12) sprites.draw(ctx, 'puff', x + 4, y + 6);

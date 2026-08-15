@@ -39,6 +39,11 @@
             "id": "entry",
             "tx": 3,
             "ty": 12
+        },
+        {
+            "id": "from_bonus",
+            "tx": 46,
+            "ty": 12
         }
     ],
     "entities": [

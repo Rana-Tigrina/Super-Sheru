@@ -2,11 +2,27 @@
 # Dependencies
 node_modules/
 
-# Editors
-.vscode/
+# Logs and temp files
+*.log
+*.tmp
 
 # Environment
 .env
 .env.local
 *.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+*.js.map
+*.mjs.map
+
+# Cache directories
+.cache/
+.nyc_output/
+coverage/
 ```

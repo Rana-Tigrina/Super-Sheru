@@ -148,7 +148,7 @@ function decide(sim, ctx) {
     for (const pipe of level.pipes) {
         const distToPipe = pipe.tx - colFront;
         /* If pipe is close and we need to clear it */
-        if (distToPipe >= 1 && distToPipe <= 10) {
+        if (distToPipe >= 1 && distToPipe <= 12) {
             /* Check if this pipe leads to bonus (we want to skip bonus pipes during main run) */
             /* We detect bonus pipes by checking if they have a target */
             if (pipe.target) {
@@ -156,9 +156,9 @@ function decide(sim, ctx) {
                 /* Jump earlier and longer to clear the entire pipe width */
                 const pipeEndCol = pipe.tx + pipe.w;
                 const distToClear = pipeEndCol - colFront;
-                if (distToClear <= 8) {
+                if (distToClear <= 10) {
                     /* We're about to land on it - jump now! */
-                    ctx.jumping = holdLong + 6;
+                    ctx.jumping = holdLong + 15;
                     ctx.jumpRun = true;
                     return RIGHT | JUMP | RUN;
                 }
@@ -166,11 +166,13 @@ function decide(sim, ctx) {
         }
     }
 
-    /* wall ahead (stairs, pillars, pipes) */
+    /* wall ahead (stairs, pillars, pipes) - but NOT pipe tops that would trigger warp */
     let wall = false, wallH = 0;
     for (let d = 0; d <= 2 && !wall; d++) {
         const c = colFront + d;
-        if (level.isSolidAt(c, footRow) || level.isSolidAt(c, footRow - 1)) {
+        /* Skip wall detection if we're directly above a pipe (to avoid false positives) */
+        const abovePipe = checkPipeWarp(c);
+        if (!abovePipe && (level.isSolidAt(c, footRow) || level.isSolidAt(c, footRow - 1))) {
             wall = true;
             for (let r = footRow; r >= footRow - 5; r--) {
                 if (level.isSolidAt(c, r)) wallH++;
