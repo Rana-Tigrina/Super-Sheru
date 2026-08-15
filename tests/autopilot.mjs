@@ -30,6 +30,7 @@ export function autopilotLevel(levelJson, opts = {}) {
         jumping: 0, jumpRun: false,
         patience: 0,
         maxX: -1, stall: 0, escape: 0,
+        avoidPipeWarp: false, pipeWarpCooldown: 0,
     };
 
     let t = 0;
@@ -41,6 +42,8 @@ export function autopilotLevel(levelJson, opts = {}) {
 
         if (sim.player.s.x > ctx.maxX) { ctx.maxX = sim.player.s.x; ctx.stall = 0; }
         else ctx.stall++;
+        
+        if (ctx.pipeWarpCooldown > 0) ctx.pipeWarpCooldown--;
     }
 
     return {
@@ -74,11 +77,25 @@ function decide(sim, ctx) {
 
     const footRow = FP.floorInt(p.y + FP.fromInt(p.h) - 1) >> 4;
     const colFront = FP.floorInt(p.x + FP.fromInt(p.w)) >> 4;
+    const headRow = FP.floorInt(p.y) >> 4;
 
     const support = (c) => {
         for (let r = footRow + 1; r <= footRow + 3; r++) {
             const id = level.tileAt(c, r);
             if (isSolid(id) || isOneWay(id)) return true;
+        }
+        return false;
+    };
+
+    /* Check if we're directly above a pipe that would trigger warp */
+    const checkPipeWarp = (col) => {
+        for (const pipe of level.pipes) {
+            const pipeTopRow = pipe.ty;
+            const pipeLeftCol = pipe.tx;
+            const pipeRightCol = pipe.tx + pipe.w - 1;
+            if (col >= pipeLeftCol && col <= pipeRightCol && footRow === pipeTopRow - 1) {
+                return true;
+            }
         }
         return false;
     };
@@ -126,9 +143,32 @@ function decide(sim, ctx) {
         return RIGHT | JUMP | RUN;
     }
 
+    /* pipe ahead → must jump early and clear it entirely (avoid warp) */
+    /* Only trigger if we're not already in warp cooldown and pipe is a bonus pipe */
+    for (const pipe of level.pipes) {
+        const distToPipe = pipe.tx - colFront;
+        /* If pipe is close and we need to clear it */
+        if (distToPipe >= 1 && distToPipe <= 10) {
+            /* Check if this pipe leads to bonus (we want to skip bonus pipes during main run) */
+            /* We detect bonus pipes by checking if they have a target */
+            if (pipe.target) {
+                /* This is a warp pipe - we need to jump over it completely */
+                /* Jump earlier and longer to clear the entire pipe width */
+                const pipeEndCol = pipe.tx + pipe.w;
+                const distToClear = pipeEndCol - colFront;
+                if (distToClear <= 8) {
+                    /* We're about to land on it - jump now! */
+                    ctx.jumping = holdLong + 6;
+                    ctx.jumpRun = true;
+                    return RIGHT | JUMP | RUN;
+                }
+            }
+        }
+    }
+
     /* wall ahead (stairs, pillars, pipes) */
     let wall = false, wallH = 0;
-    for (let d = 0; d <= 1 && !wall; d++) {
+    for (let d = 0; d <= 2 && !wall; d++) {
         const c = colFront + d;
         if (level.isSolidAt(c, footRow) || level.isSolidAt(c, footRow - 1)) {
             wall = true;

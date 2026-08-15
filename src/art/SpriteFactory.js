@@ -13,34 +13,34 @@
 
 import { TILE_ID } from '../core/constants.js';
 
-/* ══ THE LOCKED PALETTE — 26 colors, land-of-Bharat flavored ══════════════ */
+/* ══ THE LOCKED PALETTE — 26 colors, land-of-Bharat inspired ══════════════ */
 export const PALETTE = {
-    ink: '#181022',
-    aubergine: '#3a2250',
-    plum: '#5d3a7e',
-    indigo: '#39498c',
-    deepwater: '#274a8c',
-    water: '#3a7ac8',
-    peacock: '#177182',
-    teal: '#2fa78e',
-    deepgreen: '#2f6b33',
-    leaf: '#5aa544',
-    olive: '#8a9a3b',
-    earth: '#7a4a2c',
-    brick: '#9c5a3c',
-    sandstone: '#d8b078',
-    cream: '#f5e6c8',
-    white: '#f8f4ec',
-    ash: '#c8c4d8',
-    slate: '#8884a8',
-    cloud: '#dce4f0',
-    marigold: '#f2b632',
-    flame: '#ffd23e',
-    saffron: '#e07028',
-    sindoor: '#c8383c',
-    crimson: '#a02836',
-    rose: '#e05a7a',
-    lotus: '#e87aa0',
+    ink: '#1a0f2e',           // deep indigo night
+    aubergine: '#4a1a5c',     // baingan purple
+    plum: '#6b2d8f',          // jamun plum
+    indigo: '#2d4a8f',        // neel kanth blue
+    deepwater: '#1a3a6f',     // Ganga deep
+    water: '#4a8fd9',         // Yamuna blue
+    peacock: '#007a8f',       // mayur green-blue
+    teal: '#2fb58f',          // temple bronze
+    deepgreen: '#1a5c2e',     // paddy field dark
+    leaf: '#6fb54a',          // tulsi green
+    olive: '#9fad3b',         // mustard greens
+    earth: '#8f4a2a',         // mitti brown
+    brick: '#b56a3c',         // terracotta
+    sandstone: '#e0c088',     // Jaisalmer stone
+    cream: '#f5e6c8',         // malai cream
+    white: '#faf6ef',         // ivory white
+    ash: '#c8c4d8',           // bhasm ash
+    slate: '#8f84a8',         // monsoon cloud
+    cloud: '#e4ecf5',         // himalayan mist
+    marigold: '#ffb632',      // genda phool
+    flame: '#ffd94a',         // diya flame
+    saffron: '#ff8c28',       // bhagwa orange
+    sindoor: '#d9383c',       // vermilion red
+    crimson: '#a82836',       // kumkum deep
+    rose: '#e85a7a',          // gulab pink
+    lotus: '#f08aa0',         // kamal pink
 };
 
 /* ══ BANKS — per-sprite-group key lists, ≤ 32 each (validator rule 3) ═════ */
@@ -83,17 +83,16 @@ function bake(rows) {
     return cv;
 }
 
-/* ══ SHERU — the golden lion of Bharat ════════════════════════════════════ */
+/* ══ SHERU — the golden lion of Bharat with regal mane ═══════════════════════ */
 const SHERU_BODY = [
     DOT16,
     '.....mmmmmm.....',
     '....mSSSSSSm....',
-    '...mSSccccSSm...',
-    '...mSckcckcSm...',
+    '...mSccccccSSm...',
+    '...mScckkccSm...',
     '...mSccrrccSm...',
     '....mSSSSSSm....',
     '....SSSSSSSS....',
-    '...SSSSSSSSSS...',
     '...SSSccccSSS...',
     '...SSSccccSSS...',
     '....SSSSSSSS....',
@@ -151,7 +150,7 @@ const FLOATER = [
     ],
 ];
 
-/* ══ tiles ════════════════════════════════════════════════════════════════ */
+/* ══ tiles — Indian architectural textures ═══════════════════════════════════ */
 const TILE_GROUND = [
     'gggggggggggggggg',
     'GggGgggGgGgggGgG',
