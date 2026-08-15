@@ -6,7 +6,7 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/Super-Sheru.git
+git clone https://github.com/Rana-Tigrina/Super-Sheru.git
 cd Super-Sheru
 
 # 2. Install dependencies
