@@ -15,8 +15,8 @@ import { PIPE_FADE_STEPS } from '../level/MacroLevelLoader.js';
 import { nextChapter, warpTo } from '../../main.js';
 
 const GAME_KEYS = new Set([
-    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space',
-    'KeyA', 'KeyD', 'KeyZ', 'KeyX', 'KeyC', 'ShiftLeft', 'ShiftRight',
+    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space',
+    'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyZ', 'KeyX', 'KeyC', 'ShiftLeft', 'ShiftRight',
 ]);
 
 export class GameScene {
@@ -48,7 +48,7 @@ export class GameScene {
         this.camX = 0;
         this.camY = -(VIEW.H - this.sim.level.pxH);
 
-        this.keys = { left: false, right: false, jump: false, run: false };
+        this.keys = { left: false, right: false, jump: false, run: false, down: false };
         this._kd = (e) => this._onKey(e, true);
         this._ku = (e) => this._onKey(e, false);
         window.addEventListener('keydown', this._kd);
@@ -86,7 +86,8 @@ export class GameScene {
         switch (e.code) {
             case 'ArrowLeft': case 'KeyA': this.keys.left = down; break;
             case 'ArrowRight': case 'KeyD': this.keys.right = down; break;
-            case 'ArrowUp': case 'Space': case 'KeyZ': this.keys.jump = down; break;
+            case 'ArrowUp': case 'Space': case 'KeyZ': case 'KeyW': this.keys.jump = down; break;
+            case 'ArrowDown': case 'KeyS': this.keys.down = down; break;
             case 'ShiftLeft': case 'ShiftRight': this.keys.run = down; break;
             case 'KeyX':
                 this.keys.run = down;
@@ -109,6 +110,8 @@ export class GameScene {
         if (this.keys.right) bits |= BTN.RIGHT;
         if (this.keys.jump) bits |= BTN.JUMP;
         if (this.keys.run) bits |= BTN.RUN;
+        /* DOWN button for pipe entry - only when explicitly pressed */
+        if (this.keys.down) bits |= BTN.DOWN;
         bits |= TouchControls.bits & (BTN.LEFT | BTN.RIGHT | BTN.JUMP | BTN.RUN);
 
         /* throw edge: X/C press, or touch A rising edge */

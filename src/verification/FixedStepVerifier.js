@@ -165,11 +165,12 @@ export function stepSimulation(sim, bits) {
         }
     }
 
-    /* 9 — pipes: land on the mouth to warp */
+    /* 9 — pipes: land on the mouth AND press DOWN to warp */
     if (sim.result === 'playing') {
         const bottom = p.y + phF;
         for (const pipe of level.pipes) {
             if (
+                (bits & BTN.DOWN) &&           // must press DOWN to enter
                 p.onGround &&
                 FP.abs(bottom - pipe.y) <= 2 &&
                 p.x + pwF > pipe.x + 2 &&

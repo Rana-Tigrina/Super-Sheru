@@ -12,7 +12,7 @@ export function createWalkerState(tx, ty, dir) {
     return {
         /* entity ty = the tile row the feet occupy */
         x: FP.fromInt(tx * 16 + 2),
-        y: FP.fromInt((ty + 1) * 16 - PHYS.ENEMY_H),
+        y: FP.fromInt((ty + 1) * 16 - PHYS.PLAYER_H),  // Match player height for proper alignment
         vx: 0, vy: 0,
         w: PHYS.ENEMY_W, h: PHYS.ENEMY_H,
         dir: dir >= 0 ? 1 : -1,
