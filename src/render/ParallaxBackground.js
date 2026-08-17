@@ -214,7 +214,9 @@ class WeatherParticles {
 export class ParallaxBackground {
     constructor(chapterId) {
         this.chapterId = chapterId;
-        this.config = CHAPTER_BACKGROUNDS[chapterId] || CHAPTER_BACKGROUNDS.ch1_01;
+        this.config = CHAPTER_BACKGROUNDS[chapterId] ||
+            CHAPTER_BACKGROUNDS[chapterId?.replace('_bonus', '_01')] ||
+            CHAPTER_BACKGROUNDS.ch1_01;
         this.skyCanvas = document.createElement('canvas');
         this.skyCanvas.width = W;
         this.skyCanvas.height = H;
@@ -483,33 +485,49 @@ export class ParallaxBackground {
         ctx.restore();
     }
 
-    /** Draw all parallax layers with appropriate scroll offsets. */
-    draw(ctx, camX, step) {
-        // Layer 0: Sky (no scroll)
+    /** Layer 0: Sky (0.00x) */
+    drawSky(ctx, camX = 0, step = 0) {
         ctx.drawImage(this.skyCanvas, 0, 0);
-        
-        // Layer 1: Distant mountains/horizon (0.15x)
+    }
+
+    /** Layer 1: Distant mountains/horizon (0.15x) */
+    drawDistant(ctx, camX = 0, step = 0) {
+        if (!this.config.layers.distant) return;
         const distantX = -(camX * 0.15) % W;
-        if (this.config.layers.distant) {
-            ctx.fillStyle = this.config.layers.distant.color;
-            this._drawDistantMountains(ctx, distantX, H - 60);
-            this._drawDistantMountains(ctx, distantX + W, H - 60);
-        }
-        
-        // Layer 2: Landmark (0.35x)
+        ctx.fillStyle = this.config.layers.distant.color;
+        this._drawDistantMountains(ctx, distantX, H - 60);
+        this._drawDistantMountains(ctx, distantX + W, H - 60);
+        this._drawDistantMountains(ctx, distantX - W, H - 60);
+    }
+
+    /** Layer 2: Landmark (0.35x) */
+    drawLandmarks(ctx, camX = 0, step = 0) {
         const landmarkX = -(camX * 0.35) % W;
         ctx.drawImage(this.landmarkCanvas, landmarkX, 0);
         ctx.drawImage(this.landmarkCanvas, landmarkX + W, 0);
         ctx.drawImage(this.landmarkCanvas, landmarkX - W, 0);
-        
-        // Layer 3: Foreground ambience (0.65x)
+    }
+
+    /** Layer 3: Foreground ambience (0.65x) */
+    drawForeground(ctx, camX = 0, step = 0) {
         const fgX = -(camX * 0.65) % W;
         ctx.drawImage(this.foregroundCanvas, fgX, 0);
         ctx.drawImage(this.foregroundCanvas, fgX + W, 0);
         ctx.drawImage(this.foregroundCanvas, fgX - W, 0);
-        
-        // Layer 5: Weather particles
+    }
+
+    /** Layer 5: Weather particles */
+    drawWeather(ctx, step = 0) {
         this.weather.draw(ctx, step);
+    }
+
+    /** Draw all parallax layers at once. */
+    draw(ctx, camX, step) {
+        this.drawSky(ctx, camX, step);
+        this.drawDistant(ctx, camX, step);
+        this.drawLandmarks(ctx, camX, step);
+        this.drawForeground(ctx, camX, step);
+        this.drawWeather(ctx, step);
     }
 
     _drawDistantMountains(ctx, offsetX, baseY) {
