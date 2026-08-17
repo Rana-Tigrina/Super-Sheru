@@ -1,20 +1,24 @@
 /* src/player/PlayerLogic.js — pure, deterministic Sheru simulation.
  * GRD: integer FP only, no audio, no rendering, no RNG. GameScene passes an
- * `events` object each step and consumes flags (jump/bonk/hurt/…) for SFX.
+ * `events` object each step and consumes flags (jump/bonk/hurt/shatter/…) for SFX.
  */
 
 import {
-    FP, PHYS, PHYS_FP, P_STATE, BTN, TILE_ID,
+    FP, PHYS, PHYS_FP, P_STATE, PLAYER_FORM, FORM_DIMS, BTN, TILE_ID,
     isSolid, isOneWay, isHazard, isWater,
 } from '../core/constants.js';
 
 const LAND_VY = FP.fromNumber(4.5);   // fall speed that plays the "land" thud
 const HURT_STEPS = 26;                // hurt-lock duration
+const KAVACH_SPEED_MULT = FP.fromNumber(1.4); // 40% speed boost during Sudarshan Kavach
 
 export function createPlayerState(xFP, yFP) {
     return {
         x: xFP, y: yFP, vx: 0, vy: 0,
         w: PHYS.PLAYER_W, h: PHYS.PLAYER_H,
+        form: PLAYER_FORM.SMALL,
+        kavachTimer: 0,
+        transformTimer: 0,
         facing: 1,
         onGround: false,
         coyote: 0, jumpBuffer: 0, jumpHeld: false, airJumped: false,
@@ -86,6 +90,13 @@ function moveY(s, level, ev) {
                 s.vy = 0;
                 if (id === TILE_ID.LADDOO_BLOCK && level.bonkBlock(tx, ty)) {
                     ev.bonk = { tx, ty };
+                } else if (id === TILE_ID.BRICK) {
+                    if (s.form === PLAYER_FORM.SUPER) {
+                        level.setTile(tx, ty, TILE_ID.AIR);
+                        ev.shatter = { tx, ty };
+                    } else {
+                        ev.bonk = { tx, ty };
+                    }
                 }
                 break;
             }
@@ -126,6 +137,8 @@ function applyFriction(s) {
 
 export function stepPlayer(s, bits, level, ev) {
     if (s.invuln > 0) s.invuln--;
+    if (s.kavachTimer > 0) s.kavachTimer--;
+    if (s.transformTimer > 0) s.transformTimer--;
     s.stateTimer++;
 
     const left = !!(bits & BTN.LEFT);
@@ -151,8 +164,11 @@ export function stepPlayer(s, bits, level, ev) {
 
     const hurtLock = s.state === P_STATE.HURT && s.stateTimer < HURT_STEPS;
 
-    /* horizontal */
-    const maxSpd = run ? PHYS_FP.MAX_RUN : PHYS_FP.MAX_WALK;
+    /* horizontal speed with optional Kavach 40% boost */
+    let maxSpd = run ? PHYS_FP.MAX_RUN : PHYS_FP.MAX_WALK;
+    if (s.kavachTimer > 0) {
+        maxSpd = FP.mul(maxSpd, KAVACH_SPEED_MULT);
+    }
     const acc = s.onGround ? (run ? PHYS_FP.RUN_ACC : PHYS_FP.WALK_ACC) : PHYS_FP.AIR_ACC;
 
     if (!hurtLock) {
@@ -221,11 +237,51 @@ export function stepPlayer(s, bits, level, ev) {
     }
 }
 
-/* ── outcomes (called by GameScene / combat resolution) ─────────────────── */
+/* ── outcomes & power-ups ────────────────────────────────────────────────── */
+
+export function transformPlayer(s, form, ev) {
+    if (form === PLAYER_FORM.SUPER) {
+        if (s.form !== PLAYER_FORM.SUPER) {
+            const diffH = FORM_DIMS[PLAYER_FORM.SUPER].h - s.h;
+            s.y -= FP.fromInt(diffH); // offset position up so feet stay anchored
+            s.w = FORM_DIMS[PLAYER_FORM.SUPER].w;
+            s.h = FORM_DIMS[PLAYER_FORM.SUPER].h;
+            s.form = PLAYER_FORM.SUPER;
+            s.transformTimer = 30;
+            if (ev) ev.transform = { form: PLAYER_FORM.SUPER };
+        }
+    } else if (form === PLAYER_FORM.SMALL) {
+        if (s.form !== PLAYER_FORM.SMALL) {
+            s.w = FORM_DIMS[PLAYER_FORM.SMALL].w;
+            s.h = FORM_DIMS[PLAYER_FORM.SMALL].h;
+            s.form = PLAYER_FORM.SMALL;
+            s.transformTimer = 30;
+            if (ev) ev.transform = { form: PLAYER_FORM.SMALL };
+        }
+    }
+}
+
+export function activateKavach(s, durationTicks = 720, ev) {
+    s.kavachTimer = durationTicks;
+    if (ev) ev.kavach = true;
+}
 
 export function damagePlayer(s, ev) {
-    if (s.invuln > 0 || s.state === P_STATE.DEAD ||
+    if (s.invuln > 0 || s.kavachTimer > 0 || s.state === P_STATE.DEAD ||
         s.state === P_STATE.WIN || s.state === P_STATE.HURT) return;
+
+    /* Super Sheru absorbs hit and transforms down to Small Sheru */
+    if (s.form === PLAYER_FORM.SUPER) {
+        transformPlayer(s, PLAYER_FORM.SMALL, ev);
+        s.invuln = PHYS.INVULN_STEPS * 2;
+        ev.hurt = true;
+        s.state = P_STATE.HURT;
+        s.stateTimer = 0;
+        s.vx = FP.mul(PHYS_FP.HURT_KNOCK_X, FP.fromInt(-s.facing));
+        s.vy = PHYS_FP.HURT_POP_Y;
+        s.onGround = false;
+        return;
+    }
 
     s.lives--;
     ev.hurt = true;
@@ -261,6 +317,10 @@ export function respawnAtCheckpoint(s, ev) {
     s.vx = 0;
     s.vy = 0;
     s.onGround = false;
+    s.form = PLAYER_FORM.SMALL;
+    s.w = PHYS.PLAYER_W;
+    s.h = PHYS.PLAYER_H;
+    s.kavachTimer = 0;
     s.state = P_STATE.FALL;
     s.stateTimer = 0;
     s.invuln = PHYS.INVULN_STEPS;

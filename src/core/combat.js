@@ -37,9 +37,12 @@ export const OUTCOME_HURT = Object.freeze({ action: 'hurt', killsEnemy: false, b
  * @param {number} side   CONTACT.* where the player touches the enemy
  * @param {number} vy     player vertical velocity in FP (sign only is used:
  *                        rising through a TOP contact is a bump, not a stomp)
+ * @param {boolean} isInvincible whether player currently has active Sudarshan Kavach
  * @returns {Readonly<{action:'none'|'stomp'|'hurt', killsEnemy:boolean, bounce:boolean}>}
  */
-export function resolvePlayerEnemy(state, side, vy) {
+export function resolvePlayerEnemy(state, side, vy, isInvincible = false) {
+    if (isInvincible) return OUTCOME_STOMP;
+
     const row = RESOLVE_TABLE[state];
     if (!row) return OUTCOME_NONE;
 

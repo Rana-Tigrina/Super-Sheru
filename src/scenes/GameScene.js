@@ -1,12 +1,14 @@
 /* src/scenes/GameScene.js — plays one level.
  * The world IS a FixedStepVerifier simulation: identical step semantics to
- * proofs/ghosts. This scene adds input, audio, camera, rendering, HUD.
+ * proofs/ghosts. This scene adds input, audio, camera, rendering, HUD, and game feel.
  */
 
 import { VIEW, PHYS, BTN, P_STATE, FP, TILE, TILE_ID } from '../core/constants.js';
-import { clampInt } from '../core/util.js';
 import { SpriteFactory, tileSpriteName } from '../art/SpriteFactory.js';
 import { ColorGradePipeline } from '../render/ColorGradePipeline.js';
+import { Camera } from '../render/Camera.js';
+import { GameFeel } from '../core/GameFeel.js';
+import { BlockManager } from '../level/BlockManager.js';
 import { HUD } from '../ui/HUD.js';
 import { TouchControls } from '../ui/TouchControls.js';
 import { DebugOverlay } from '../debug/DebugOverlay.js';
@@ -37,6 +39,12 @@ export class GameScene {
         this.app.grade.setGrade(this.json.meta.grade);
         this.sim = createSimulation(this.json, this.spawnId);
 
+        this.camera = new Camera(VIEW.W, VIEW.H);
+        this.camera.reset(FP.toInt(this.sim.player.s.x), 0, this.sim.level.pxW);
+
+        this.gameFeel = new GameFeel(this.camera);
+        this.blockManager = new BlockManager(this.sim.level);
+
         this.stepCount = 0;
         this.paused = false;
         this.titleTimer = 150;
@@ -66,6 +74,8 @@ export class GameScene {
 
     restart() {
         this.sim = createSimulation(this.json, 'entry');
+        this.blockManager.reset();
+        this.camera.reset(FP.toInt(this.sim.player.s.x), 0, this.sim.level.pxW);
         this._deadTimer = 0;
         this._warpTimer = 0;
         this.titleTimer = 150;
@@ -102,18 +112,21 @@ export class GameScene {
 
     step() {
         if (this.paused) return;
+
+        // Hit-stop check: if game is currently in impact micro-pause, freeze step
+        if (!this.gameFeel.update()) return;
+
         this.stepCount++;
+        this.blockManager.update();
 
         let bits = 0;
         if (this.keys.left) bits |= BTN.LEFT;
         if (this.keys.right) bits |= BTN.RIGHT;
         if (this.keys.jump) bits |= BTN.JUMP;
         if (this.keys.run) bits |= BTN.RUN;
-        /* DOWN button for pipe entry - only when explicitly pressed */
         if (this.keys.down) bits |= BTN.DOWN;
         bits |= TouchControls.bits & (BTN.LEFT | BTN.RIGHT | BTN.JUMP | BTN.RUN);
 
-        /* throw edge: X/C press, or touch A rising edge */
         let throwPressed = this.throwQueued;
         this.throwQueued = false;
         const touch = TouchControls.bits;
@@ -124,6 +137,13 @@ export class GameScene {
         this._consumeEvents(ev);
 
         const sim = this.sim;
+        const p = sim.player.s;
+
+        // Update smooth look-ahead camera
+        this.camera.update(FP.toInt(p.x), FP.toInt(p.y), p.facing, FP.toNumber(p.vx), sim.level.pxW);
+        this.camX = this.camera.renderX;
+        this.camY = this.camera.renderY - (VIEW.H - sim.level.pxH);
+
         if (sim.result === 'flag') {
             if (sim.player.s.stateTimer >= PHYS.WIN_LOCK_STEPS) this.app.nextChapter();
         } else if (sim.result === 'dead') {
@@ -143,11 +163,35 @@ export class GameScene {
         const sfx = this.app.audio?.sfx;
         if (!sfx) return;
         if (ev.jump) sfx.jump();
-        if (ev.bonk || ev.laddoo) sfx.laddoo();
+        if (ev.bonk) {
+            this.blockManager.hitBlock(ev.bonk.tx, ev.bonk.ty, this.sim.player.isSuper);
+            this.gameFeel.shake(4, 1.5);
+            sfx.laddoo();
+        }
+        if (ev.laddoo) sfx.laddoo();
         if (ev.throw) sfx.chakra();
-        if (ev.stomp || ev.enemyKilled) sfx.stomp();
-        if (ev.shatter) sfx.pause();
-        if (ev.hurt) sfx.hurt();
+        if (ev.stomp) {
+            this.gameFeel.onEnemyStomp();
+            sfx.stomp();
+        } else if (ev.enemyKilled) {
+            sfx.stomp();
+        }
+        if (ev.shatter) {
+            this.gameFeel.onBrickShatter();
+            sfx.pause();
+        }
+        if (ev.hurt) {
+            this.gameFeel.onPlayerHurt();
+            sfx.hurt();
+        }
+        if (ev.transform) {
+            this.gameFeel.onTransform();
+            sfx.laddoo();
+        }
+        if (ev.kavach) {
+            this.gameFeel.onTransform();
+            sfx.laddoo();
+        }
         if (ev.splash || ev.pit) sfx.splash();
         if (ev.respawn || ev.checkpoint) sfx.checkpoint();
         if (ev.pipe) sfx.pipe();
@@ -166,11 +210,8 @@ export class GameScene {
 
         grade.drawSky(ctx);
 
-        /* camera */
-        const camX = clampInt(FP.toInt(p.x) - (VIEW.W >> 1) + 8, 0, Math.max(0, level.pxW - VIEW.W));
-        const camY = -(VIEW.H - level.pxH);
-        this.camX = camX;
-        this.camY = camY;
+        const camX = this.camX;
+        const camY = this.camY;
 
         /* tiles in view */
         const tx0 = Math.max(0, camX >> 4);
@@ -195,6 +236,9 @@ export class GameScene {
         for (const chk of level.checkpoints) chk.draw(ctx, sprites, camX, camY);
         for (const l of level.laddoos) l.draw(ctx, sprites, camX, camY, this.stepCount);
         if (level.flag) level.flag.draw(ctx, sprites, camX, camY);
+
+        /* interactive block animations & brick debris */
+        this.blockManager.draw(ctx, sprites, camX, camY);
 
         /* actors */
         for (const e of level.enemies) e.draw(ctx, sprites, camX, camY, this.stepCount);

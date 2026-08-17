@@ -119,7 +119,7 @@ export function stepSimulation(sim, bits) {
             (p.vy >= 0 && (p.y + phF) - e.y <= FP.fromInt(7)) ? CONTACT.TOP :
                 (p.y >= e.y + ehF - FP.fromInt(4)) ? CONTACT.BOTTOM :
                     CONTACT.SIDE;
-        const r = resolvePlayerEnemy(p.state, side, p.vy);
+        const r = resolvePlayerEnemy(p.state, side, p.vy, (p.kavachTimer > 0));
         if (r.killsEnemy) {
             obj.squash();
             sim.player.stompBounce();

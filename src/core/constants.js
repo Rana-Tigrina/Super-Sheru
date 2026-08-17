@@ -125,11 +125,24 @@ export const PHYS_FP = {
 export const BTN = { LEFT: 1, RIGHT: 2, JUMP: 4, RUN: 8, THROW: 16, DOWN: 32 };
 export const INPUT = BTN;   // alias used by solver/verifier code
 
-/* ── player states (spec §3) ────────────────────────────────────────────── */
+/* ── player states & forms (spec §3) ────────────────────────────────────── */
 export const P_STATE = {
     IDLE: 0, RUN: 1, SKID: 2, JUMP: 3, FALL: 4,
-    STOMP: 5, HURT: 6, DEAD: 7, WIN: 8,
+    STOMP: 5, HURT: 6, DEAD: 7, WIN: 8, TRANSFORMING: 9,
 };
+
+export const PLAYER_FORM = {
+    SMALL: 0,
+    SUPER: 1,
+    INVINCIBLE: 2,
+};
+
+export const FORM_DIMS = {
+    [PLAYER_FORM.SMALL]: { w: 10, h: 14, wFP: FP.fromInt(10), hFP: FP.fromInt(14) },
+    [PLAYER_FORM.SUPER]: { w: 14, h: 22, wFP: FP.fromInt(14), hFP: FP.fromInt(22) },
+    [PLAYER_FORM.INVINCIBLE]: { w: 10, h: 14, wFP: FP.fromInt(10), hFP: FP.fromInt(14) },
+};
+
 
 /* ── tiles (spec §4) ────────────────────────────────────────────────────── */
 export const TILE_ID = {

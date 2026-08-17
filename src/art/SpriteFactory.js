@@ -97,12 +97,75 @@ const SHERU_BODY = [
     '...SSSccccSSS...',
     '....SSSSSSSS....',
 ];
+
 const SHERU_LEGS = {
     idle: ['....SS....SS....', '....cc....cc....'],
     run0: ['...SS......SS...', '...cc......cc...'],
     run1: ['.....SS..SS.....', '.....cc..cc.....'],
     jump: ['....SSSSSSSS....', DOT16],
 };
+
+/* ══ SUPER SHERU — 16×24 regal form with royal pagri & golden necklace ══════ */
+const SHERU_SUPER_BODY = [
+    '.....fSSf.......',
+    '....SSSSSS......',
+    '....SSSSSS......',
+    '....mSSSSm......',
+    '...mmmSSmmm.....',
+    '..mmSSSSSSmm....',
+    '..mSSccccSSm....',
+    '..mScckkccSm....',
+    '..mSccrrccSm....',
+    '..mmSSSSSSmm....',
+    '..SSSSSSSSSS....',
+    '..SSSccccSSS....',
+    '..SSSmffmSSS....',
+    '..SSSccccSSS....',
+    '..SSSSSSSSSS....',
+    '..SSSmrrmSSS....',
+    '..SSSSSSSSSS....',
+    '..SSSSSSSSSS....',
+    '..SSSSSSSSSS....',
+    '...SSSSSSSS.....',
+];
+
+const SHERU_SUPER_LEGS = {
+    idle: ['....SSSSSSSS....', '....cccccccc....', '....mmmmmmmm....', DOT16],
+    run0: ['...SSSS..SSSS...', '...cccc..cccc...', '...mmmm..mmmm...', DOT16],
+    run1: ['.....SSSS..SS...', '.....cccc..cc...', '.....mmmm..mm...', DOT16],
+    jump: ['...SSSSSSSSSS...', '...cccccccccc...', DOT16, DOT16],
+};
+
+/* ══ power-ups & particles ═════════════════════════════════════════════════ */
+const MODAK = [
+    '..ffff..',
+    '.fmmmmf.',
+    '.fmmmmf.',
+    'fmmmmmmf',
+    'fmmmmmmf',
+    'fmmmmmmf',
+    '.fmmmmf.',
+    '..ffff..',
+];
+
+const KAVACH_STAR = [
+    '..WWWW..',
+    '.WffffW.',
+    'WfmmmmfW',
+    'WfmmmmfW',
+    'WfmmmmfW',
+    'WfmmmmfW',
+    '.WffffW.',
+    '..WWWW..',
+];
+
+const BRICK_DEBRIS = [
+    '.bb.',
+    'bbbb',
+    'bbbb',
+    '.bb.',
+];
+
 
 /* ══ enemies ══════════════════════════════════════════════════════════════ */
 const WALKER_BODY = [
@@ -511,12 +574,20 @@ const SPRITES = {
     'sheru.run1': [...SHERU_BODY, ...SHERU_LEGS.run1, DOT16, DOT16],
     'sheru.jump': [...SHERU_BODY, ...SHERU_LEGS.jump, DOT16, DOT16],
 
+    'sheru_super.idle': [...SHERU_SUPER_BODY, ...SHERU_SUPER_LEGS.idle],
+    'sheru_super.run0': [...SHERU_SUPER_BODY, ...SHERU_SUPER_LEGS.run0],
+    'sheru_super.run1': [...SHERU_SUPER_BODY, ...SHERU_SUPER_LEGS.run1],
+    'sheru_super.jump': [...SHERU_SUPER_BODY, ...SHERU_SUPER_LEGS.jump],
+
     'walker.0': [...WALKER_BODY, ...WALKER_FEET[0]],
     'walker.1': [...WALKER_BODY, ...WALKER_FEET[1]],
     'floater.0': FLOATER[0],
     'floater.1': FLOATER[1],
 
     'laddoo': LADDOO,
+    'modak': MODAK,
+    'kavach': KAVACH_STAR,
+    'debris.brick': BRICK_DEBRIS,
     'chakra.0': CHAKRA_FRAMES[0],
     'chakra.1': CHAKRA_FRAMES[1],
     'sparkle': SPARKLE,
