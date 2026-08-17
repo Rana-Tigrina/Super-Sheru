@@ -1,7 +1,7 @@
 /* src/enemies/WalkerEnemy.js — walker shell (state + draw). */
 
 import { FP } from '../core/constants.js';
-import { createWalkerState, stepWalker } from './EnemyLogic.js';
+import { createWalkerState, stepWalker } from './WalkerEnemyLogic.js';
 
 export class WalkerEnemy {
     constructor(ent) {

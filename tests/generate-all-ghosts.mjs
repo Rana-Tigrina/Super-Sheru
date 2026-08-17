@@ -4,7 +4,7 @@
  * claims "ghost-tested 8/8" only if every replay reaches the flag.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { autopilotLevel } from './autopilot.mjs';
 import { runGhostTest } from '../src/verification/FixedStepVerifier.js';
 import { hashInputVector } from '../src/core/util.js';
@@ -18,6 +18,11 @@ const CHAPTERS = [
 const hex = (h) => '0x' + (h >>> 0).toString(16).padStart(8, '0');
 const loadLevel = (id) =>
     JSON.parse(readFileSync(new URL(`../levels/${id}.json`, import.meta.url), 'utf8'));
+
+const ghostsDir = new URL('./ghosts/', import.meta.url);
+if (!existsSync(ghostsDir)) {
+    mkdirSync(ghostsDir, { recursive: true });
+}
 
 let ok = 0;
 for (const id of CHAPTERS) {

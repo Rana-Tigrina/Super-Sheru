@@ -19,12 +19,10 @@ import ch6_bonus from './levels/ch6_bonus.json';
 import ch7_01 from './levels/ch7_01.json';
 import ch8_01 from './levels/ch8_01.json';
 
-import { PHYS } from './src/core/constants.js';
-import { AudioEngine } from './src/audio/AudioEngine.js';
-import { TitleScene } from './src/scenes/TitleScene.js';
-import { GameScene } from './src/scenes/GameScene.js';
-import { EndingScene } from './src/scenes/EndingScene.js';
-import { TouchControls } from './src/ui/TouchControls.js';
+import { PHYS } from './src/core/index.js';
+import { AudioEngine } from './src/audio/index.js';
+import { TitleScene, GameScene, EndingScene } from './src/scenes/index.js';
+import { TouchControls } from './src/ui/index.js';
 
 /** GRD v2 level manifest — single source of truth for scenes, solver, tests. */
 export const LEVELS = {
@@ -44,8 +42,9 @@ const ctx = canvas.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;            // pixels stay pixels
 
 /* ── app object passed to every scene ───────────────────────────────────── */
-const app = {
-    canvas, ctx,
+export const app = {
+    canvas,
+    ctx,
     levels: LEVELS,
     chapters: CHAPTERS,
     audio: null,                                // created below (needs gesture)
@@ -56,23 +55,35 @@ const app = {
         this.scene = scene;
         scene.enter?.();
     },
+    startGame() {
+        this.chapterIndex = 0;
+        this.goto(new GameScene(this, CHAPTERS[0], 'entry'));
+    },
+    nextChapter() {
+        this.chapterIndex += 1;
+        if (this.chapterIndex >= CHAPTERS.length) {
+            this.goto(new EndingScene(this));
+        } else {
+            this.goto(new GameScene(this, CHAPTERS[this.chapterIndex], 'entry'));
+        }
+    },
+    warpTo(levelId, spawnId = 'entry') {
+        this.goto(new GameScene(this, levelId, spawnId));
+    },
 };
 
-/* ── scene routing ──────────────────────────────────────────────────────── */
+/* ── scene routing delegations ─────────────────────────────────────────── */
 export function startGame() {
-    app.chapterIndex = 0;
-    app.goto(new GameScene(app, CHAPTERS[0], 'entry'));
+    app.startGame();
 }
 
 export function nextChapter() {
-    app.chapterIndex += 1;
-    if (app.chapterIndex >= CHAPTERS.length) app.goto(new EndingScene(app));
-    else app.goto(new GameScene(app, CHAPTERS[app.chapterIndex], 'entry'));
+    app.nextChapter();
 }
 
 /** Pipe warps (ch2 ↔ ch2_bonus, ch6 ↔ ch6_bonus). Chapter index is preserved. */
 export function warpTo(levelId, spawnId = 'entry') {
-    app.goto(new GameScene(app, levelId, spawnId));
+    app.warpTo(levelId, spawnId);
 }
 
 /* ── audio (created lazily; browsers demand a user gesture) ─────────────── */
@@ -85,7 +96,7 @@ window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     switch (e.code) {
         case 'Enter':
-            if (app.scene?.id === 'title') startGame();
+            if (app.scene?.id === 'title') app.startGame();
             else if (app.scene?.id === 'ending') app.goto(new TitleScene(app));
             break;
         case 'KeyP': app.scene?.togglePause?.(); break;

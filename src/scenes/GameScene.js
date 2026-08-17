@@ -12,7 +12,6 @@ import { TouchControls } from '../ui/TouchControls.js';
 import { DebugOverlay } from '../debug/DebugOverlay.js';
 import { createSimulation, stepSimulation } from '../verification/FixedStepVerifier.js';
 import { PIPE_FADE_STEPS } from '../level/MacroLevelLoader.js';
-import { nextChapter, warpTo } from '../../main.js';
 
 const GAME_KEYS = new Set([
     'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space',
@@ -126,14 +125,14 @@ export class GameScene {
 
         const sim = this.sim;
         if (sim.result === 'flag') {
-            if (sim.player.s.stateTimer >= PHYS.WIN_LOCK_STEPS) nextChapter();
+            if (sim.player.s.stateTimer >= PHYS.WIN_LOCK_STEPS) this.app.nextChapter();
         } else if (sim.result === 'dead') {
             this._deadTimer++;
             if (this._deadTimer > 70) this.restart();
         } else if (sim.result === 'warp') {
             this._warpTimer++;
             if (this._warpTimer >= PIPE_FADE_STEPS) {
-                warpTo(sim.warpTarget.levelId, sim.warpTarget.spawnId);
+                this.app.warpTo(sim.warpTarget.levelId, sim.warpTarget.spawnId);
             }
         }
 

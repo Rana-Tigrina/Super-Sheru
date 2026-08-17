@@ -8,7 +8,7 @@
         "dev": "vite",
         "build": "npm run palette && npm run prove && vite build",
         "preview": "vite preview",
-        "palette": "node validate-palette.mjs",
+        "palette": "node tools/validate-palette.mjs",
         "prove": "node tools/grd-solver.mjs --all",
         "prove:one": "node tools/grd-solver.mjs --level",
         "ghosts": "node tests/generate-all-ghosts.mjs",

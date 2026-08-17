@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-/* validate-palette.mjs — the GRD v2 palette gate
- * ───────────────────────────────────────────────
+/* tools/validate-palette.mjs — the GRD v2 palette gate
+ * ───────────────────────────────────────────────────
  * SpriteFactory is palette-locked: every pixel the game draws must resolve
  * to a key in the PALETTE table of src/art/SpriteFactory.js. This script
  * enforces the contract so CI can block the build on violations:
@@ -15,7 +15,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-const FACTORY_PATH = new URL('./src/art/SpriteFactory.js', import.meta.url);
+const FACTORY_PATH = new URL('../src/art/SpriteFactory.js', import.meta.url);
 const HEX = /^#[0-9a-f]{6}$/;
 const BANK_MAX = 32;
 

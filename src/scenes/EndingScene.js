@@ -1,6 +1,7 @@
 /* src/scenes/EndingScene.js — समाप्त. The eight lands, one sunrise. */
 
 import { VIEW, ENGINE_VERSION } from '../core/constants.js';
+import { SpriteFactory } from '../art/SpriteFactory.js';
 import { ColorGradePipeline } from '../render/ColorGradePipeline.js';
 
 const GOLD = '#f2b632';
@@ -26,7 +27,7 @@ export class EndingScene {
     }
 
     enter() {
-        if (!this.app.sprites) this.app.sprites = new (require_noop())();
+        if (!this.app.sprites) this.app.sprites = new SpriteFactory();
         if (!this.app.grade) this.app.grade = new ColorGradePipeline();
         this.app.grade.setGrade('sunrise');
         this.app.audio?.stopMusic();
@@ -72,9 +73,4 @@ export class EndingScene {
         this._text(ctx, `GRD v${ENGINE_VERSION} · fixed-step physics · ghost-tested 8/8`, W / 2, H - 8, 7, 'rgba(245,230,200,0.5)');
         this.app.grade.apply(ctx);
     }
-}
-
-/* tiny guard so a missing sprites cache never crashes the ending */
-function require_noop() {
-    return class { get() { return null; } draw() { } drawWater() { } };
 }
