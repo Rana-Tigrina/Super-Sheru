@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* tests/generate-all-ghosts.mjs — regenerate all eight ghosts with the
- * autopilot (style 1, "relaxed"), then replay-verify each one. The build
+ * autopilot across styles, then replay-verify each one. The build
  * claims "ghost-tested 8/8" only if every replay reaches the flag.
  */
 
@@ -27,33 +27,37 @@ if (!existsSync(ghostsDir)) {
 let ok = 0;
 for (const id of CHAPTERS) {
     const level = loadLevel(id);
-    const run = autopilotLevel(level, { style: 1, maxSteps: 14000 });
+    let solved = false;
 
-    if (run.result !== 'flag') {
-        console.error(`  ✗ ${id}: autopilot failed to record a ghost (${run.result})`);
-        continue;
+    for (const style of [0, 1, 2, 3, 4, 5, 6, 7]) {
+        const run = autopilotLevel(level, { style, maxSteps: 14000 });
+        if (run.result === 'flag') {
+            const doc = {
+                format: 'grd2/ghost',
+                levelId: id,
+                engineVersion: ENGINE_VERSION,
+                steps: run.steps,
+                result: 'flag',
+                laddoos: run.laddoos,
+                inputHash: hex(hashInputVector(run.inputs)),
+                inputs: run.inputs,
+            };
+            const out = new URL(`./ghosts/${id}.ghost.json`, import.meta.url);
+            writeFileSync(out, JSON.stringify(doc, null, 2) + '\n');
+
+            /* trust but verify: replay what we just wrote */
+            const r = runGhostTest(level, doc);
+            if (r.result === 'flag' && r.hashOk) {
+                console.log(`  ✓ ${id}: ghost recorded & replayed (style ${style}) → flag in ${r.steps} steps`);
+                ok++;
+                solved = true;
+                break;
+            }
+        }
     }
 
-    const doc = {
-        format: 'grd2/ghost',
-        levelId: id,
-        engineVersion: ENGINE_VERSION,
-        steps: run.steps,
-        result: 'flag',
-        laddoos: run.laddoos,
-        inputHash: hex(hashInputVector(run.inputs)),
-        inputs: run.inputs,
-    };
-    const out = new URL(`./ghosts/${id}.ghost.json`, import.meta.url);
-    writeFileSync(out, JSON.stringify(doc, null, 2) + '\n');
-
-    /* trust but verify: replay what we just wrote */
-    const r = runGhostTest(level, doc);
-    if (r.result === 'flag' && r.hashOk) {
-        console.log(`  ✓ ${id}: ghost recorded & replayed → flag in ${r.steps} steps`);
-        ok++;
-    } else {
-        console.error(`  ✗ ${id}: ghost written but replay diverged (${r.result})`);
+    if (!solved) {
+        console.error(`  ✗ ${id}: autopilot failed to record a ghost across all styles`);
     }
 }
 

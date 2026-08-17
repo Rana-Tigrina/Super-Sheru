@@ -2,7 +2,7 @@
 /* tools/grd-solver.mjs — the proof gate.
  * For each chapter: if the shipped proof still replays to the flag with a
  * matching FNV hash → keep it. Otherwise re-solve with the autopilot
- * (4 styles) and write a fresh proofs/<id>.proof.json.
+ * (across styles) and write a fresh proofs/<id>.proof.json.
  *
  *   node tools/grd-solver.mjs --all
  *   node tools/grd-solver.mjs --level ch4_01
@@ -44,7 +44,7 @@ function solve(id) {
     }
 
     /* 2 — autopilot search across styles */
-    for (const style of [0, 1, 2, 3]) {
+    for (const style of [0, 1, 2, 3, 4, 5, 6, 7]) {
         const run = autopilotLevel(level, { style, maxSteps: 14000 });
         if (run.result === 'flag') {
             const doc = {
