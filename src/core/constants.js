@@ -135,12 +135,18 @@ export const PLAYER_FORM = {
     SMALL: 0,
     SUPER: 1,
     INVINCIBLE: 2,
+    FIRE: 3,
+    GLIDE: 4,
+    MAGNET: 5,
 };
 
 export const FORM_DIMS = {
     [PLAYER_FORM.SMALL]: { w: 10, h: 14, wFP: FP.fromInt(10), hFP: FP.fromInt(14) },
     [PLAYER_FORM.SUPER]: { w: 14, h: 22, wFP: FP.fromInt(14), hFP: FP.fromInt(22) },
     [PLAYER_FORM.INVINCIBLE]: { w: 10, h: 14, wFP: FP.fromInt(10), hFP: FP.fromInt(14) },
+    [PLAYER_FORM.FIRE]: { w: 14, h: 22, wFP: FP.fromInt(14), hFP: FP.fromInt(22) },
+    [PLAYER_FORM.GLIDE]: { w: 12, h: 18, wFP: FP.fromInt(12), hFP: FP.fromInt(18) },
+    [PLAYER_FORM.MAGNET]: { w: 10, h: 14, wFP: FP.fromInt(10), hFP: FP.fromInt(14) },
 };
 
 

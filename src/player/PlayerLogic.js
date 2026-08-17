@@ -11,6 +11,8 @@ import {
 const LAND_VY = FP.fromNumber(4.5);   // fall speed that plays the "land" thud
 const HURT_STEPS = 26;                // hurt-lock duration
 const KAVACH_SPEED_MULT = FP.fromNumber(1.4); // 40% speed boost during Sudarshan Kavach
+const GLIDE_MAX_FALL = FP.fromNumber(1.5);    // gentle glide fall terminal velocity
+const GLIDE_AIR_ACC_MULT = FP.fromNumber(1.25); // +25% air control while gliding
 
 export function createPlayerState(xFP, yFP) {
     return {
@@ -18,7 +20,9 @@ export function createPlayerState(xFP, yFP) {
         w: PHYS.PLAYER_W, h: PHYS.PLAYER_H,
         form: PLAYER_FORM.SMALL,
         kavachTimer: 0,
+        magnetTimer: 0,
         transformTimer: 0,
+        glideActive: false,
         facing: 1,
         onGround: false,
         coyote: 0, jumpBuffer: 0, jumpHeld: false, airJumped: false,
@@ -91,7 +95,7 @@ function moveY(s, level, ev) {
                 if (id === TILE_ID.LADDOO_BLOCK && level.bonkBlock(tx, ty)) {
                     ev.bonk = { tx, ty };
                 } else if (id === TILE_ID.BRICK) {
-                    if (s.form === PLAYER_FORM.SUPER) {
+                    if (s.form === PLAYER_FORM.SUPER || s.form === PLAYER_FORM.FIRE) {
                         level.setTile(tx, ty, TILE_ID.AIR);
                         ev.shatter = { tx, ty };
                     } else {
@@ -138,6 +142,7 @@ function applyFriction(s) {
 export function stepPlayer(s, bits, level, ev) {
     if (s.invuln > 0) s.invuln--;
     if (s.kavachTimer > 0) s.kavachTimer--;
+    if (s.magnetTimer > 0) s.magnetTimer--;
     if (s.transformTimer > 0) s.transformTimer--;
     s.stateTimer++;
 
@@ -169,7 +174,16 @@ export function stepPlayer(s, bits, level, ev) {
     if (s.kavachTimer > 0) {
         maxSpd = FP.mul(maxSpd, KAVACH_SPEED_MULT);
     }
-    const acc = s.onGround ? (run ? PHYS_FP.RUN_ACC : PHYS_FP.WALK_ACC) : PHYS_FP.AIR_ACC;
+    let acc = s.onGround ? (run ? PHYS_FP.RUN_ACC : PHYS_FP.WALK_ACC) : PHYS_FP.AIR_ACC;
+
+    /* Pawan Pagri Glide mechanic */
+    s.glideActive = false;
+    if (s.form === PLAYER_FORM.GLIDE && !s.onGround && jump && s.vy > 0) {
+        s.glideActive = true;
+        s.vy = Math.min(s.vy, GLIDE_MAX_FALL);
+        acc = FP.mul(PHYS_FP.AIR_ACC, GLIDE_AIR_ACC_MULT);
+        ev.glide = true;
+    }
 
     if (!hurtLock) {
         if (left && !right) { s.vx = FP.clamp(s.vx - acc, -maxSpd, maxSpd); s.facing = -1; }
@@ -202,8 +216,10 @@ export function stepPlayer(s, bits, level, ev) {
         s.airJumped = false;
     }
 
-    /* gravity + integrate */
-    s.vy = FP.clamp(s.vy + PHYS_FP.GRAVITY, -PHYS_FP.MAX_FALL, PHYS_FP.MAX_FALL);
+    /* gravity + integrate (respecting glide descent) */
+    if (!s.glideActive) {
+        s.vy = FP.clamp(s.vy + PHYS_FP.GRAVITY, -PHYS_FP.MAX_FALL, PHYS_FP.MAX_FALL);
+    }
     moveX(s, level);
     moveY(s, level, ev);
 
@@ -240,24 +256,15 @@ export function stepPlayer(s, bits, level, ev) {
 /* ── outcomes & power-ups ────────────────────────────────────────────────── */
 
 export function transformPlayer(s, form, ev) {
-    if (form === PLAYER_FORM.SUPER) {
-        if (s.form !== PLAYER_FORM.SUPER) {
-            const diffH = FORM_DIMS[PLAYER_FORM.SUPER].h - s.h;
-            s.y -= FP.fromInt(diffH); // offset position up so feet stay anchored
-            s.w = FORM_DIMS[PLAYER_FORM.SUPER].w;
-            s.h = FORM_DIMS[PLAYER_FORM.SUPER].h;
-            s.form = PLAYER_FORM.SUPER;
-            s.transformTimer = 30;
-            if (ev) ev.transform = { form: PLAYER_FORM.SUPER };
-        }
-    } else if (form === PLAYER_FORM.SMALL) {
-        if (s.form !== PLAYER_FORM.SMALL) {
-            s.w = FORM_DIMS[PLAYER_FORM.SMALL].w;
-            s.h = FORM_DIMS[PLAYER_FORM.SMALL].h;
-            s.form = PLAYER_FORM.SMALL;
-            s.transformTimer = 30;
-            if (ev) ev.transform = { form: PLAYER_FORM.SMALL };
-        }
+    const dims = FORM_DIMS[form] || FORM_DIMS[PLAYER_FORM.SMALL];
+    if (s.form !== form) {
+        const diffH = dims.h - s.h;
+        s.y -= FP.fromInt(diffH); // anchor feet
+        s.w = dims.w;
+        s.h = dims.h;
+        s.form = form;
+        s.transformTimer = 30;
+        if (ev) ev.transform = { form };
     }
 }
 
@@ -266,12 +273,17 @@ export function activateKavach(s, durationTicks = 720, ev) {
     if (ev) ev.kavach = true;
 }
 
+export function activateMagnet(s, durationTicks = 600, ev) {
+    s.magnetTimer = durationTicks;
+    if (ev) ev.magnet = true;
+}
+
 export function damagePlayer(s, ev) {
     if (s.invuln > 0 || s.kavachTimer > 0 || s.state === P_STATE.DEAD ||
         s.state === P_STATE.WIN || s.state === P_STATE.HURT) return;
 
-    /* Super Sheru absorbs hit and transforms down to Small Sheru */
-    if (s.form === PLAYER_FORM.SUPER) {
+    /* Upgraded Sheru absorbs hit and transforms down to Small Sheru */
+    if (s.form !== PLAYER_FORM.SMALL) {
         transformPlayer(s, PLAYER_FORM.SMALL, ev);
         s.invuln = PHYS.INVULN_STEPS * 2;
         ev.hurt = true;
@@ -321,6 +333,8 @@ export function respawnAtCheckpoint(s, ev) {
     s.w = PHYS.PLAYER_W;
     s.h = PHYS.PLAYER_H;
     s.kavachTimer = 0;
+    s.magnetTimer = 0;
+    s.glideActive = false;
     s.state = P_STATE.FALL;
     s.stateTimer = 0;
     s.invuln = PHYS.INVULN_STEPS;

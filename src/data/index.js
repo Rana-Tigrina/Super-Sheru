@@ -7,3 +7,4 @@ export * from './EnemyData.js';
 export * from './CollectibleData.js';
 export * from './WeatherConfig.js';
 export * from './ParallaxConfig.js';
+export * from './ProgressionManager.js';

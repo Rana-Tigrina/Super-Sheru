@@ -17,6 +17,9 @@ import { TouchControls } from '../ui/TouchControls.js';
 import { DebugOverlay } from '../debug/DebugOverlay.js';
 import { createSimulation, stepSimulation } from '../verification/FixedStepVerifier.js';
 import { PIPE_FADE_STEPS } from '../level/MacroLevelLoader.js';
+import { progression } from '../data/ProgressionManager.js';
+import { CostumeManager } from '../art/CostumeManager.js';
+import { KalaYantra, HimManav, MayaviAsura } from '../enemies/bosses/index.js';
 
 const GAME_KEYS = new Set([
     'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space',
@@ -50,6 +53,7 @@ export class GameScene {
         this.parallax = new ParallaxBackground(this.levelId);
         this.particles = new ParticleEngine();
         this.lighting = new LightingEngine(VIEW.W, VIEW.H);
+        this.boss = this._createBossForLevel(this.levelId);
 
         this.stepCount = 0;
         this.paused = false;
@@ -71,6 +75,17 @@ export class GameScene {
         this.app.audio?.startMusic(this.json.meta);
     }
 
+    _createBossForLevel(levelId) {
+        if (levelId === 'ch2_01') {
+            return new KalaYantra(FP.fromInt(this.sim.level.pxW - 140), FP.fromInt(180));
+        } else if (levelId === 'ch4_01') {
+            return new MayaviAsura(FP.fromInt(this.sim.level.pxW - 140), FP.fromInt(180));
+        } else if (levelId === 'ch7_01') {
+            return new HimManav(FP.fromInt(this.sim.level.pxW - 140), FP.fromInt(180));
+        }
+        return null;
+    }
+
     exit() {
         window.removeEventListener('keydown', this._kd);
         window.removeEventListener('keyup', this._ku);
@@ -83,6 +98,7 @@ export class GameScene {
         this.blockManager.reset();
         this.particles.clear();
         this.lighting.clear();
+        this.boss = this._createBossForLevel(this.levelId);
         this.camera.reset(FP.toInt(this.sim.player.s.x), 0, this.sim.level.pxW);
         this._deadTimer = 0;
         this._warpTimer = 0;
@@ -147,6 +163,35 @@ export class GameScene {
         const sim = this.sim;
         const p = sim.player.s;
 
+        // Step active regional boss encounter
+        if (this.boss && this.boss.alive) {
+            this.boss.step(sim.level, p, ev);
+            // Check player collision with boss
+            const bb = this.boss.boxFP;
+            const pb = sim.player.boxFP;
+            if (
+                pb.x < bb.x + bb.w && pb.x + pb.w > bb.x &&
+                pb.y < bb.y + bb.h && pb.y + pb.h > bb.y
+            ) {
+                if (sim.player.isKavach) {
+                    this.boss.takeDamage();
+                    this.gameFeel.onEnemyStomp();
+                } else if (p.vy > 0 && (p.y + pb.h - bb.y) <= FP.fromInt(8)) {
+                    if (this.boss.vulnerable) {
+                        this.boss.takeDamage();
+                        this.gameFeel.onEnemyStomp();
+                        sim.player.stompBounce();
+                        this.particles.enemyStomp(FP.toInt(p.x), FP.toInt(p.y));
+                    } else {
+                        sim.player.stompBounce();
+                        this.gameFeel.shake(4, 2);
+                    }
+                } else {
+                    sim.player.damage(ev);
+                }
+            }
+        }
+
         // Ambient movement particles
         if (p.state === P_STATE.RUN && (this.stepCount % 6 === 0)) {
             this.particles.runDust(FP.toInt(p.x), FP.toInt(p.y), p.facing);
@@ -162,6 +207,7 @@ export class GameScene {
         this.camY = this.camera.renderY - (VIEW.H - sim.level.pxH);
 
         if (sim.result === 'flag') {
+            progression.completeChapter(this.levelId, this.stepCount);
             if (sim.player.s.stateTimer >= PHYS.WIN_LOCK_STEPS) this.app.nextChapter();
         } else if (sim.result === 'dead') {
             this._deadTimer++;
@@ -295,9 +341,17 @@ export class GameScene {
         /* 4. Interactive block animations & brick debris */
         this.blockManager.draw(ctx, sprites, camX, camY);
 
-        /* 5. Actors */
+        /* 5. Actors & Bosses */
         for (const e of level.enemies) e.draw(ctx, sprites, camX, camY, this.stepCount);
+        if (this.boss && this.boss.alive) {
+            this.boss.draw(ctx, sprites, camX, camY, this.stepCount);
+        }
         sim.player.draw(ctx, sprites, camX, camY, this.stepCount);
+        CostumeManager.drawAccessory(
+            ctx, sprites, progression.selectedCostume,
+            FP.toInt(p.x) - camX, FP.toInt(p.y) - camY,
+            p.facing, sim.player.isSuper, this.stepCount
+        );
         for (const c of sim.chakras.list) c.draw(ctx, sprites, camX, camY, this.stepCount);
 
         /* 6. Dynamic Localized Lights */
@@ -342,6 +396,8 @@ export class GameScene {
             title: level.meta.name,
             land: level.meta.land,
             titleTimer: this.titleTimer,
+            seals: progression.getSeals(this.levelId),
+            boss: this.boss,
         });
 
         /* Warp fade */

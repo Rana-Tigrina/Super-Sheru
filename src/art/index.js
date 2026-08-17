@@ -1,3 +1,4 @@
-/* src/art/index.js — Pixel art sprite factory and palette. */
+/* src/art/index.js — Sprite factory, textures, palettes, and costumes. */
 
 export * from './SpriteFactory.js';
+export * from './CostumeManager.js';
