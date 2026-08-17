@@ -109,4 +109,24 @@ export class SFX {
         this._tone({ type: 'square', f0: 523.25, dur: 0.09, vol: 0.14, delay: 0.1 });
         this._tone({ type: 'square', f0: 659.25, dur: 0.16, vol: 0.14, delay: 0.2 });
     }
+
+    powerUp() {
+        const notes = [330, 392, 440, 587.33, 659.25];
+        notes.forEach((f, i) => this._tone({ type: 'square', f0: f, dur: 0.1, vol: 0.16, delay: i * 0.06 }));
+    }
+
+    powerDown() {
+        this._tone({ type: 'sawtooth', f0: 440, f1: 220, dur: 0.2, vol: 0.18 });
+        this._tone({ type: 'sawtooth', f0: 220, f1: 110, dur: 0.25, vol: 0.16, delay: 0.15 });
+    }
+
+    shatter() {
+        this._noise({ dur: 0.12, vol: 0.35, freq: 1600 });
+        this._tone({ type: 'triangle', f0: 240, f1: 60, dur: 0.14, vol: 0.25 });
+    }
+
+    kavach() {
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+        notes.forEach((f, i) => this._tone({ type: 'sine', f0: f, dur: 0.18, vol: 0.15, delay: i * 0.05 }));
+    }
 }

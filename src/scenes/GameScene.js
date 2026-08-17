@@ -178,7 +178,7 @@ export class GameScene {
         }
         if (ev.shatter) {
             this.gameFeel.onBrickShatter();
-            sfx.pause();
+            sfx.shatter();
         }
         if (ev.hurt) {
             this.gameFeel.onPlayerHurt();
@@ -186,11 +186,11 @@ export class GameScene {
         }
         if (ev.transform) {
             this.gameFeel.onTransform();
-            sfx.laddoo();
+            sfx.powerUp();
         }
         if (ev.kavach) {
             this.gameFeel.onTransform();
-            sfx.laddoo();
+            sfx.kavach();
         }
         if (ev.splash || ev.pit) sfx.splash();
         if (ev.respawn || ev.checkpoint) sfx.checkpoint();

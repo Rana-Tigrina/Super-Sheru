@@ -1,7 +1,7 @@
 /* src/level/BlockManager.js — Interactive block framework.
  * ─────────────────────────────────────────────────────────────────────────────
  * Manages dynamic block behaviors:
- *   - Royal Peetal Mystery Vaults (?): Bounce curve, item spawn, spent transition.
+ *   - Royal Peetal Mystery Vaults (?): Bounce curve, rising item spawn, spent transition.
  *   - Mithai Multihit Boxes: Up to 10 laddoos with progressive tactile recoil.
  *   - Terracotta / Sandstone Bricks: Recoil on Small Sheru, shatter on Super Sheru.
  */
@@ -14,6 +14,7 @@ export class BlockManager {
         this.bouncingBlocks = new Map(); // key: `${tx},${ty}` -> { timer, maxTimer, tileId, offsetY }
         this.multiHitCounts = new Map(); // key: `${tx},${ty}` -> remainingHits
         this.debrisParticles = [];       // [ { x, y, vx, vy, life, maxLife } ]
+        this.risingItems = [];           // [ { x, y, vy, sprite, timer } ]
     }
 
     /** Reset state on level load. */
@@ -21,6 +22,7 @@ export class BlockManager {
         this.bouncingBlocks.clear();
         this.multiHitCounts.clear();
         this.debrisParticles.length = 0;
+        this.risingItems.length = 0;
     }
 
     /** Handle underside collision with a block. Returns event descriptor if interaction occurred. */
@@ -31,15 +33,16 @@ export class BlockManager {
         if (this.bouncingBlocks.has(key)) return null; // already in bounce animation
 
         if (id === TILE_ID.LADDOO_BLOCK) {
-            // Mystery Vault
+            // Mystery Vault: starts bounce and pops out rising laddoo item
             this.bouncingBlocks.set(key, { timer: 8, maxTimer: 8, tileId: TILE_ID.SPENT });
             this.level.setTile(tx, ty, TILE_ID.SPENT);
+            this._spawnRisingItem(tx * 16 + 4, ty * 16, 'laddoo');
             return { type: 'vault', tx, ty, item: 'laddoo' };
         }
 
         if (id === TILE_ID.BRICK) {
             if (isSuper) {
-                // Super Sheru shatters brick
+                // Super Sheru shatters brick into 4 angular physics shards
                 this.level.setTile(tx, ty, TILE_ID.AIR);
                 this._spawnBrickDebris(tx * 16 + 8, ty * 16 + 8);
                 return { type: 'shatter', tx, ty };
@@ -73,7 +76,18 @@ export class BlockManager {
         }
     }
 
-    /** Step active block animations and debris physics. */
+    /** Spawn rising collectable item out of the top of the block. */
+    _spawnRisingItem(x, y, sprite = 'laddoo') {
+        this.risingItems.push({
+            x,
+            y,
+            vy: -3.4,
+            sprite,
+            timer: 20,
+        });
+    }
+
+    /** Step active block animations, rising items, and debris physics. */
     update() {
         // Update bouncing blocks
         for (const [key, block] of this.bouncingBlocks.entries()) {
@@ -84,6 +98,17 @@ export class BlockManager {
 
             if (block.timer <= 0) {
                 this.bouncingBlocks.delete(key);
+            }
+        }
+
+        // Update rising items
+        for (let i = this.risingItems.length - 1; i >= 0; i--) {
+            const item = this.risingItems[i];
+            item.y += item.vy;
+            item.vy += 0.22; // decelerate upward velocity
+            item.timer--;
+            if (item.timer <= 0) {
+                this.risingItems.splice(i, 1);
             }
         }
 
@@ -100,7 +125,7 @@ export class BlockManager {
         }
     }
 
-    /** Render bouncing blocks and flying debris fragments. */
+    /** Render bouncing blocks, rising items, and flying debris fragments. */
     draw(ctx, sprites, camX, camY) {
         // Draw bouncing blocks
         for (const [key, block] of this.bouncingBlocks.entries()) {
@@ -110,6 +135,13 @@ export class BlockManager {
 
             const spriteName = block.tileId === TILE_ID.SPENT ? 'tile.spent' : 'tile.brick';
             sprites.draw(ctx, spriteName, x, y);
+        }
+
+        // Draw rising items
+        for (const item of this.risingItems) {
+            const x = (item.x - camX) | 0;
+            const y = (item.y - camY) | 0;
+            sprites.draw(ctx, item.sprite, x, y);
         }
 
         // Draw debris fragments
