@@ -33,6 +33,33 @@ export class Laddoo {
     }
 }
 
+export class AncientSeal {
+    constructor(tx, ty, index = 0) {
+        this.kind = 'seal';
+        this.index = index;
+        this.x = FP.fromInt(tx * TILE + 2);
+        this.y = FP.fromInt(ty * TILE + 2);
+        this.w = FP.fromInt(12);
+        this.h = FP.fromInt(12);
+        this.taken = false;
+    }
+    draw(ctx, sprites, camX, camY, step) {
+        if (this.taken) return;
+        const bob = FP.toInt(FP.mul(FP.fromInt(3), FP.sin((step * 3) & 255)));
+        const x = FP.toInt(this.x) - camX;
+        const y = FP.toInt(this.y) - camY + bob;
+        ctx.save();
+        ctx.fillStyle = '#ffd94a'; // gold
+        ctx.beginPath();
+        ctx.arc(x + 6, y + 6, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ff8c28'; // saffron border
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 export class Flag {
     constructor(tx, ty) {
         this.kind = 'flag';
@@ -146,6 +173,7 @@ export class Level {
         /* ── entities ── */
         this.enemies = [];
         this.laddoos = [];
+        this.seals = [];
         this.checkpoints = [];
         this.pipes = [];
         this.decors = [];
@@ -154,6 +182,7 @@ export class Level {
         for (const ent of json.entities ?? []) {
             switch (ent.type) {
                 case 'laddoo': this.laddoos.push(new Laddoo(ent.tx, ent.ty)); break;
+                case 'seal': this.seals.push(new AncientSeal(ent.tx, ent.ty, ent.index ?? this.seals.length)); break;
                 case 'walker': this.enemies.push(new WalkerEnemy(ent)); break;
                 case 'floater': this.enemies.push(new FloaterEnemy(ent)); break;
                 case 'checkpoint': this.checkpoints.push(new Checkpoint(ent.tx, ent.ty)); break;

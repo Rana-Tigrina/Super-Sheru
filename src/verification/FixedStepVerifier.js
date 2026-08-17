@@ -52,6 +52,7 @@ export function createSimulation(levelJson, spawnId = 'entry') {
     const spatial = new SpatialHash(2);
 
     for (const l of level.laddoos) spatial.insert(l, l.x, l.y, l.w, l.h);
+    for (const s of level.seals) spatial.insert(s, s.x, s.y, s.w, s.h);
     for (const e of level.enemies) {
         spatial.insert(e, e.s.x, e.s.y, FP.fromInt(e.s.w), FP.fromInt(e.s.h));
     }
@@ -105,6 +106,13 @@ export function stepSimulation(sim, bits) {
                 obj.taken = true;
                 p.laddoos++;
                 ev.laddoo = true;
+            }
+            continue;
+        }
+        if (obj.kind === 'seal') {
+            if (!obj.taken && aabb(p.x, p.y, pwF, phF, obj.x, obj.y, obj.w, obj.h)) {
+                obj.taken = true;
+                ev.seal = { index: obj.index };
             }
             continue;
         }

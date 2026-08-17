@@ -245,6 +245,12 @@ export class GameScene {
             this.particles.laddooCollect(px + 4, py + 4);
             sfx?.laddoo();
         }
+        if (ev.seal) {
+            progression.collectSeal(this.levelId, ev.seal.index);
+            this.particles.burst(px + 4, py + 4, 'star', 12);
+            this.particles.burst(px + 4, py + 4, 'sparkle', 16);
+            sfx?.powerUp();
+        }
         if (ev.throw) {
             this.particles.chakraTrail(px + 8, py + 8);
             sfx?.chakra();
@@ -336,6 +342,7 @@ export class GameScene {
         for (const pipe of level.pipes) pipe.draw(ctx, sprites, camX, camY);
         for (const chk of level.checkpoints) chk.draw(ctx, sprites, camX, camY);
         for (const l of level.laddoos) l.draw(ctx, sprites, camX, camY, this.stepCount);
+        for (const s of (level.seals ?? [])) s.draw(ctx, sprites, camX, camY, this.stepCount);
         if (level.flag) level.flag.draw(ctx, sprites, camX, camY);
 
         /* 4. Interactive block animations & brick debris */
