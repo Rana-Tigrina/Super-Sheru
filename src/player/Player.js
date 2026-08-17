@@ -13,15 +13,24 @@ export class Player {
     /** spawn: { x, y } in FP px (Level.spawnPoint / Checkpoint.spawn*). */
     constructor(spawn) {
         this.s = createPlayerState(spawn.x, spawn.y);
+        this.squashTimer = 0; // Visual-only landing squash frame timer
     }
 
     step(bits, level, ev) {
         stepPlayer(this.s, bits, level, ev);
+        if (ev.land) {
+            this.squashTimer = 5;
+        } else if (this.squashTimer > 0) {
+            this.squashTimer--;
+        }
     }
 
     /* delegations used by GameScene / Verifier */
     damage(ev) { damagePlayer(this.s, ev); }
-    stompBounce() { applyStompBounce(this.s); }
+    stompBounce() {
+        applyStompBounce(this.s);
+        this.squashTimer = 3;
+    }
     setCheckpoint(x, y) { setCheckpoint(this.s, x, y); }
     win() { winLevel(this.s); }
     transform(form, ev) { transformPlayer(this.s, form, ev); }
@@ -64,6 +73,29 @@ export class Player {
 
         const x = FP.toInt(s.x) - camX - (isSuper ? 1 : 3);
         const y = FP.toInt(s.y) - camY - (isSuper ? 2 : 2);
+        const spriteW = 16;
+        const spriteH = isSuper ? 24 : 16;
+        const footX = x + (spriteW / 2);
+        const footY = y + spriteH;
+
+        /* Calculate dynamic squash & stretch */
+        let scaleX = 1.0;
+        let scaleY = 1.0;
+
+        if (this.squashTimer > 0 && s.onGround) {
+            const f = this.squashTimer / 5;
+            scaleX = 1.0 + 0.22 * f;
+            scaleY = 1.0 - 0.20 * f;
+        } else if (s.state === P_STATE.JUMP && s.vy < 0) {
+            scaleX = 0.88;
+            scaleY = 1.14;
+        }
+
+        ctx.save();
+        // Transform around base/feet
+        ctx.translate(footX, footY);
+        ctx.scale(scaleX, scaleY);
+        ctx.translate(-footX, -footY);
 
         /* Draw Sudarshan Kavach solar aura / rainbow glow */
         if (s.kavachTimer > 0) {
@@ -85,5 +117,6 @@ export class Player {
         }
 
         sprites.draw(ctx, name, x, y, s.facing < 0);
+        ctx.restore();
     }
 }
